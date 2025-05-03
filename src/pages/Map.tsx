@@ -5,16 +5,13 @@ import {
   Heading,
   Text,
   Stack,
-  IconButton,
-  Icon,
-  SimpleGrid,
   Spinner,
   Alert,
   AlertIcon,
-  AlertTitle,
-  AlertDescription,
   Button,
   useToast,
+  useBreakpointValue,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { MapContainer, TileLayer, GeoJSON, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -39,6 +36,11 @@ const WeatherCheck: React.FC = () => {
   const [useCustomLocation, setUseCustomLocation] = useState(false);
   const [coordinates, setCoordinates] = useState({ lat: 18.8, lng: 99.1 });
   const toast = useToast();
+
+  // Responsive values
+  const fontSize = useBreakpointValue({ base: "xs", md: "sm" });
+  const gridSpacing = useBreakpointValue({ base: 0.5, md: 1 });
+  const maxContentWidth = useBreakpointValue({ base: "100%", md: "auto" });
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -131,6 +133,7 @@ const WeatherCheck: React.FC = () => {
       borderColor="brand.100"
       boxShadow="sm"
       h="auto"
+      maxW={maxContentWidth}
     >
       <Heading
         as="h3"
@@ -157,12 +160,12 @@ const WeatherCheck: React.FC = () => {
             size="sm"
             mr={2}
           />
-          <Text fontSize="xs">กำลังตรวจสอบปริมาณฝน...</Text>
+          <Text fontSize={fontSize}>กำลังตรวจสอบปริมาณฝน...</Text>
         </Flex>
       ) : error ? (
         <Alert status="error" borderRadius="md" size="sm" py={1}>
           <AlertIcon />
-          <Text fontSize="xs">{error}</Text>
+          <Text fontSize={fontSize}>{error}</Text>
         </Alert>
       ) : (
         <Flex direction="column">
@@ -172,13 +175,13 @@ const WeatherCheck: React.FC = () => {
             borderRadius="md"
             mb={2}
             py={isGoodTime ? 2 : 1}
-            fontSize="xs"
+            fontSize={fontSize}
           >
             <AlertIcon boxSize={isGoodTime ? "18px" : "14px"} />
-            <Flex align="center">
+            <Flex align="center" width="full" justifyContent="space-between">
               <Text
                 fontWeight="bold"
-                fontSize={isGoodTime ? "md" : "xs"}
+                fontSize={isGoodTime ? { base: "sm", md: "md" } : fontSize}
                 letterSpacing={isGoodTime ? "wide" : "normal"}
               >
                 {isGoodTime
@@ -194,28 +197,28 @@ const WeatherCheck: React.FC = () => {
           </Alert>
 
           <Flex direction="column" gap={1}>
-            <Text fontSize="xs" mb={1}>
+            <Text fontSize={fontSize} mb={1}>
               ปริมาณฝนย้อนหลัง 7 วัน (
               {useCustomLocation ? "พิกัดของคุณ" : "ดอยสะเก็ด"}):
             </Text>
 
-            <SimpleGrid columns={{ base: 7 }} spacing={1} mb={2}>
+            <SimpleGrid columns={{ base: 7 }} spacing={gridSpacing} mb={2}>
               {precipData.slice(-7).map((rain, index) => (
                 <Box
                   key={index}
-                  p={1}
+                  p={{ base: 0.5, md: 1 }}
                   bg={rain >= 3 ? "mushroom.100" : "gray.50"}
                   borderRadius="sm"
                   textAlign="center"
                   borderWidth={1}
                   borderColor={rain >= 3 ? "mushroom.300" : "gray.200"}
                 >
-                  <Text fontSize="2xs" color="gray.500">
+                  <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500">
                     {index === 6 ? "วันนี้" : `${6 - index}d`}
                   </Text>
                   <Text
                     fontWeight="bold"
-                    fontSize="2xs"
+                    fontSize={{ base: "2xs", md: "xs" }}
                     color={rain >= 3 ? "mushroom.700" : "gray.600"}
                   >
                     {rain.toFixed(1)}
@@ -231,6 +234,7 @@ const WeatherCheck: React.FC = () => {
               size="xs"
               leftIcon={<Box as="span">📍</Box>}
               isLoading={loading}
+              width="full"
             >
               ใช้ตำแหน่งของฉัน
             </Button>
@@ -316,6 +320,31 @@ const Map: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState({
     hedTobZonesLength: hedTobZones.features.length,
     doisaketDistrictLength: doisaketDistrict.features.length,
+  });
+
+  // Responsive layout configuration
+  const sidebarWidth = useBreakpointValue({ base: "100%", md: "25%" });
+  const mapWidth = useBreakpointValue({ base: "100%", md: "75%" });
+  const mapLeft = useBreakpointValue({ base: 0, md: "25%" });
+  const mapHeight = useBreakpointValue({
+    base: "calc(60vh - 20px)",
+    md: "calc(100vh - 200px)",
+  });
+  const sidebarHeight = useBreakpointValue({
+    base: "auto",
+    md: "calc(100vh - 200px)",
+  });
+  const sidebarPosition = useBreakpointValue<"relative" | "absolute">({
+    base: "relative",
+    md: "absolute",
+  });
+  const mapPosition = useBreakpointValue<"relative" | "absolute">({
+    base: "relative",
+    md: "absolute",
+  });
+  const mapTop = useBreakpointValue({
+    base: 0,
+    md: 0,
   });
 
   // Update ref when state changes
@@ -486,19 +515,22 @@ const Map: React.FC = () => {
         แผนที่ศักยภาพเห็ดถอบ
       </Heading>
 
-      <Box
+      <Flex
         position="relative"
-        h={{ base: "calc(100vh - 200px)", md: "calc(100vh - 200px)" }}
+        flexDirection={{ base: "column", md: "row" }}
+        h={{ base: "auto", md: "calc(100vh - 200px)" }}
       >
-        {/* Weather Section & Map Info - 25% of the width */}
+        {/* Weather Section & Map Info */}
         <Box
-          position="absolute"
+          position={sidebarPosition}
           top={0}
           left={0}
           bottom={0}
-          width="25%"
+          width={sidebarWidth}
           zIndex={1}
           overflowY="auto"
+          mb={{ base: 4, md: 0 }}
+          height={sidebarHeight}
         >
           {/* Weather Check Component */}
           <WeatherCheck />
@@ -601,17 +633,19 @@ const Map: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Map Container - 75% of the width */}
+        {/* Map Container */}
         <Box
-          position="absolute"
-          top={0}
+          position={mapPosition}
+          top={mapTop}
           right={0}
-          left="25%"
+          left={mapLeft}
           bottom={0}
           borderRadius="xl"
           overflow="hidden"
           borderWidth="1px"
           borderColor="gray.200"
+          height={mapHeight}
+          width={mapWidth}
         >
           {dataLoading && (
             <Box
@@ -686,7 +720,7 @@ const Map: React.FC = () => {
             </LayersControl>
           </MapContainer>
         </Box>
-      </Box>
+      </Flex>
     </Box>
   );
 };
